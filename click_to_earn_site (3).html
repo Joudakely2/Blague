@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blague Gagnante - Connexion & Dashboard</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #0d1117;
+      color: #c9d1d9;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+    .wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .card, .login-card {
+      background-color: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 30px;
+      width: 100%;
+      max-width: 500px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    h1 { font-size: 24px; margin-bottom: 20px; }
+    .joke { font-size: 18px; margin: 20px 0; }
+    button {
+      background-color: #238636;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover { background-color: #2ea043; }
+    .credits, .ads, .message, .history { margin-top: 20px; font-size: 14px; }
+    .ads iframe { margin-top: 10px; }
+    form { margin-top: 20px; }
+    input[type="tel"], input[type="text"] {
+      padding: 10px;
+      width: 100%;
+      border-radius: 6px;
+      border: 1px solid #30363d;
+      background: #0d1117;
+      color: white;
+      margin-top: 10px;
+    }
+    #dashboard { display: none; }
+
+    /* Dollar bill animation */
+    .bill {
+      position: fixed;
+      width: 50px;
+      height: 20px;
+      background: url('https://i.imgur.com/O6aMJ4s.png') no-repeat center;
+      background-size: cover;
+      animation: fall 5s linear infinite;
+      pointer-events: none;
+      opacity: 0.7;
+    }
+    @keyframes fall {
+      0% { transform: translateY(-100px) rotate(0deg); }
+      100% { transform: translateY(100vh) rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <!-- Login UI -->
+    <div class="login-card" id="loginCard">
+      <h1>🔐 Connexion</h1>
+      <input type="text" id="username" placeholder="Nom d'utilisateur" required>
+      <button onclick="login()">Se connecter</button>
+    </div>
+
+    <!-- Dashboard UI -->
+    <div class="card" id="dashboard">
+      <h1>🎉 Bonjour <span id="userDisplay"></span> !</h1>
+      <div class="joke" id="joke">Appuie pour commencer à rire 😄</div>
+      <a id="jokeLink" href="#" target="_blank">
+        <button id="jokeButton">Blague suivante</button>
+      </a>
+      <div class="credits" id="credits">Argent gagné : 0.00 €</div>
+
+      <div class="ads">
+        <p>Publicité sponsorisée</p>
+        <iframe src="https://www.shorte.st/ads/banner" width="300" height="250" frameborder="0"></iframe>
+      </div>
+
+      <form id="withdrawForm">
+        <h3>💸 Retirer vos gains</h3>
+        <input type="tel" placeholder="Entrez votre numéro mobile" id="phone" required>
+        <button type="submit">Demander un retrait</button>
+      </form>
+      <div class="message" id="message"></div>
+      <div class="history" id="history"></div>
+    </div>
+  </div>
+
+  <!-- Falling bills -->
+  <script>
+    for (let i = 0; i < 15; i++) {
+      const bill = document.createElement('div');
+      bill.classList.add('bill');
+      bill.style.left = Math.random() * 100 + 'vw';
+      bill.style.animationDuration = (Math.random() * 3 + 3) + 's';
+      document.body.appendChild(bill);
+    }
+  </script>
+
+  <script>
+    const jokes = [
+      "Pourquoi les canards ont-ils autant d'amis ? Parce qu'ils sont super coin-coin !",
+      "Quel est le comble pour un électricien ? De ne pas être au courant !",
+      "Pourquoi les plongeurs plongent-ils toujours en arrière ? Parce que sinon ils tombent dans le bateau.",
+      "Que dit une imprimante dans l'eau ? J'ai papier !",
+      "Quel est le sport préféré des insectes ? Le criquet."
+    ];
+
+    let index = 0;
+    let money = parseFloat(localStorage.getItem("money")) || 0;
+    let currentUser = localStorage.getItem("currentUser") || "";
+    let history = JSON.parse(localStorage.getItem("history")) || [];
+
+    function updateUI() {
+      document.getElementById("credits").innerText = `Argent gagné : ${money.toFixed(2)} €`;
+      document.getElementById("history").innerHTML = history.map(h => `<div>📤 ${h.amount} € envoyé à ${h.phone}</div>`).join('');
+    }
+
+    function nextJoke() {
+      index = (index + 1) % jokes.length;
+      document.getElementById("joke").innerText = jokes[index];
+      money += 0.05;
+      localStorage.setItem("money", money);
+      updateUI();
+
+      const url = encodeURIComponent("https://votre-site.com/blague?id=" + index);
+      const shortened = `https://shrinkearn.com/st?api=YOUR_API_KEY&url=${url}`;
+      document.getElementById("jokeLink").href = shortened;
+    }
+
+    function withdraw(e) {
+      e.preventDefault();
+      const phone = document.getElementById("phone").value;
+      if (money < 2) {
+        document.getElementById("message").innerText = "⛔ Montant minimum pour un retrait : 2.00 €";
+        return;
+      }
+      document.getElementById("message").innerText = `✅ ${currentUser}, demande envoyée pour ${money.toFixed(2)} € au ${phone}.`;
+      history.push({ phone: phone, amount: money.toFixed(2) });
+      localStorage.setItem("history", JSON.stringify(history));
+      money = 0;
+      localStorage.setItem("money", money);
+      updateUI();
+    }
+
+    function login() {
+      const username = document.getElementById("username").value.trim();
+      if (!username) return alert("Veuillez entrer un nom d'utilisateur");
+      currentUser = username;
+      localStorage.setItem("currentUser", username);
+      document.getElementById("userDisplay").innerText = username;
+      document.getElementById("loginCard").style.display = "none";
+      document.getElementById("dashboard").style.display = "block";
+      updateUI();
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+      if (currentUser) {
+        document.getElementById("loginCard").style.display = "none";
+        document.getElementById("dashboard").style.display = "block";
+        document.getElementById("userDisplay").innerText = currentUser;
+        updateUI();
+      }
+      document.getElementById("jokeButton").addEventListener("click", function(e) {
+        e.preventDefault();
+        nextJoke();
+      });
+      document.getElementById("withdrawForm").addEventListener("submit", withdraw);
+    });
+  </script>
+</body>
+</html>
